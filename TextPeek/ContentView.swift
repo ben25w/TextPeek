@@ -75,7 +75,7 @@ struct ContentView: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text("TextPeek")
                             .font(.system(size: 14, weight: .bold))
-                        Text(clipboard.isEnabled ? "\(store.replacements.count) snippets · \(clipboard.items.count) clipboard items" : "\(store.replacements.count) snippets")
+                        Text(clipboard.isEnabled ? "\(store.replacements.count) snippets · \(clipboard.items.count) clips" : "\(store.replacements.count) snippets")
                             .font(.system(size: 10))
                             .foregroundStyle(.tertiary)
                     }

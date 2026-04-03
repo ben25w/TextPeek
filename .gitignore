@@ -9,6 +9,9 @@ xcuserdata/
 DerivedData/
 build/
 
+# Local project notes
+STATUS.md
+
 # Swift Package Manager
 .build/
 .swiftpm/
