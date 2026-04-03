@@ -244,6 +244,22 @@ struct ContentView: View {
                     .background(RoundedRectangle(cornerRadius: 4).fill(Color(NSColor.controlBackgroundColor)))
                 }
                 .buttonStyle(.plain)
+                Spacer()
+                Button {
+                    NSApplication.shared.terminate(nil)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "power")
+                            .font(.system(size: 10))
+                        Text("Quit")
+                            .font(.system(size: 11))
+                    }
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 3)
+                    .padding(.horizontal, 7)
+                    .background(RoundedRectangle(cornerRadius: 4).fill(Color(NSColor.controlBackgroundColor)))
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
@@ -460,6 +476,16 @@ struct SettingsView: View {
     @Binding var newExcludedApp: String
     @Binding var launchAtLogin: Bool
 
+    @State private var updateState: UpdateState = .idle
+
+    enum UpdateState {
+        case idle, checking, upToDate, available(String), failed
+    }
+
+    var currentVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
 
@@ -573,7 +599,65 @@ struct SettingsView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
+
+            Divider()
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Updates")
+                        .font(.system(size: 12, weight: .medium))
+                    Text("v\(currentVersion)")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Group {
+                    switch updateState {
+                    case .idle:
+                        Button("Check") { checkForUpdates() }
+                    case .checking:
+                        Text("Checking…")
+                            .foregroundStyle(.secondary)
+                    case .upToDate:
+                        Text("Up to date")
+                            .foregroundStyle(.secondary)
+                    case .available(let version):
+                        Button("v\(version) available") {
+                            NSWorkspace.shared.open(URL(string: "https://github.com/ben25w/TextPeek/releases/latest")!)
+                        }
+                        .foregroundStyle(.blue)
+                    case .failed:
+                        Text("Check failed")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 11))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
         }
+    }
+
+    func checkForUpdates() {
+        updateState = .checking
+        let url = URL(string: "https://api.github.com/repos/ben25w/TextPeek/releases/latest")!
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            DispatchQueue.main.async {
+                guard
+                    let data,
+                    let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                    let tag = json["tag_name"] as? String
+                else {
+                    updateState = .failed
+                    return
+                }
+                let latest = tag.trimmingCharacters(in: .init(charactersIn: "v"))
+                updateState = latest.compare(currentVersion, options: .numeric) == .orderedDescending
+                    ? .available(latest)
+                    : .upToDate
+            }
+        }.resume()
     }
 
     func addExcluded() {
