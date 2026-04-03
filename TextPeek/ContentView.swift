@@ -650,12 +650,16 @@ struct SettingsView: View {
                     let tag = json["tag_name"] as? String
                 else {
                     updateState = .failed
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) { updateState = .idle }
                     return
                 }
                 let latest = tag.trimmingCharacters(in: .init(charactersIn: "v"))
-                updateState = latest.compare(currentVersion, options: .numeric) == .orderedDescending
-                    ? .available(latest)
-                    : .upToDate
+                if latest.compare(currentVersion, options: .numeric) == .orderedDescending {
+                    updateState = .available(latest)
+                } else {
+                    updateState = .upToDate
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) { updateState = .idle }
+                }
             }
         }.resume()
     }
